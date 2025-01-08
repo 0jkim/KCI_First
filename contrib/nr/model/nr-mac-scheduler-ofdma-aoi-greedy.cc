@@ -187,6 +187,11 @@ NrMacSchedulerOfdmaAoiGreedy::BeforeUlSched (const UePtrAndBufferReq &ue,
   uint32_t ue_WMA = this->GetWMA(ue_rnti);
   uePtr->UpdateAoi (ue_aoi);
   uePtr->IncrementNiceCount(ue_WMA);
+
+  /**
+   * 정규화를 위한 min-max (aoi, wma) 값 추출
+   */
+  uePtr->Update_Normalization(ue_aoi, ue_WMA);
 }
 
 } // namespace ns3
