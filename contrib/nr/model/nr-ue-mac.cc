@@ -35,6 +35,7 @@
 #include "nr-mac-header-vs.h"
 #include "nr-mac-short-bsr-ce.h"
 #include "aoi-tag.h"
+#include <iostream>
 
 namespace ns3 {
 
@@ -460,9 +461,9 @@ void
 NrUeMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
 {
   NS_LOG_FUNCTION (this << static_cast<uint32_t> (params.lcid));
-  uemac_tempUeTimeMap[params.rnti] = Simulator::Now ().GetMilliSeconds ();
+  uemac_tempUeTimeMap[params.rnti] = Simulator::Now ().GetMicroSeconds ();
   // On/Off [1]
-  // std::cout<<"[ue mac] : main에서 생성된 ue "<<params.rnti<<"의 패킷이 버퍼에 저장된 시각 : "<<uemac_tempUeTimeMap[params.rnti]<<std::endl;
+  std::cout<<"[ue mac] : main에서 생성된 ue "<<params.rnti<<"의 패킷이 버퍼에 저장된 시각 : "<<uemac_tempUeTimeMap[params.rnti]<<std::endl;
   auto it = m_ulBsrReceived.find (params.lcid);
 
   NS_LOG_INFO ("Received BSR for LC Id" << static_cast<uint32_t> (params.lcid));
@@ -518,9 +519,9 @@ NrUeMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters p
 
 void
 NrUeMac::SendReportBufferStatus (const SfnSf &dataSfn, uint8_t symStart)
-{
+{ 
   NS_LOG_FUNCTION (this);
-
+  
   if (m_rnti == 0)
     {
       NS_LOG_INFO ("MAC not initialized, BSR deferred");
@@ -838,7 +839,7 @@ void
 NrUeMac::TransmitRetx ()
 {
   NS_LOG_FUNCTION (this);
-
+  std::cout<<"[ue-mac] HARQ로 데이터 다시 보냄\n";
   Ptr<PacketBurst> pb = m_miUlHarqProcessesPacket.at (m_ulDci->m_harqProcess).m_pktBurst;
 
   if (pb == nullptr)

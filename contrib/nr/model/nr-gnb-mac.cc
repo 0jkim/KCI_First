@@ -511,10 +511,10 @@ NrGnbMac::CalculateAndPrintFinalAoI ()
       std::cout << "UE " << rnti << " - 평균 AoI: " << averageAoI << " ms, 최악 AoI: " << maxAoI
                 << " ms\n";
     }
- for (const auto &[rnti, ageList] : Worst_Age_Map)
- {
-  std::cout<<"UE "<<rnti <<"의 WMA : "<<wma_map[rnti]<<std::endl;
- }
+  for (const auto &[rnti, ageList] : Worst_Age_Map)
+    {
+      std::cout << "UE " << rnti << "의 WMA : " << wma_map[rnti] << std::endl;
+    }
   // 시스템 평균 AoI 계산
   double systemAverageAoI = static_cast<double> (totalAoI) / totalSamples;
 
@@ -861,12 +861,12 @@ NrGnbMac::DoSlotUlIndication (const SfnSf &sfnSf, LteNrTddSlotType type)
                 .m_srList) // SchedUlSrInfoReqParameters에 존재하는 m_aoiMap에 스케줄러에게 보내기 전 aoi값을 대입
           {
             auto &ueInfo = m_ueAoiMap[v];
-            //std::cout << "gnb test:" << ueInfo.currentAoI << std::endl;
+            std::cout << "[gnb]"<<v<<"가 스케줄러에게 보내는 aoi " << ueInfo.currentAoI <<" µs"<< std::endl;
             params.m_aoiMap[v] = ueInfo.currentAoI;
             if (ueInfo.lastTransmissionSuccessful)
               {
-                //std::cout << "여기 +1\n";
-                params.WMA_sap[v] += ueInfo.WMA + 1;
+                std::cout <<"[gnb]UE "<<v<<"가 스케줄러에게 보내는 WMA "<<ueInfo.WMA<<std::endl;
+                params.WMA_sap[v] += ueInfo.WMA;
               }
             else
               {
@@ -1063,19 +1063,20 @@ NrGnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 
   // 여기부터 성공적으로 데이터 패킷 수신한 UE에 대한 aoi 계산 및 출력과 시스템 aoi 계산을 위한 부분
   auto &ueInfo = m_ueAoiMap[rnti];
-  uint64_t now = Simulator::Now ().GetMilliSeconds ();
+  uint64_t now = Simulator::Now ().GetMicroSeconds ();
 
   // 실제 AoI 계산
   uint64_t realAoi = now - ueInfo.lastPacketCreationTime;
   std::cout << "[gnb-mac] gnb에서 자원을 할당받은 UE " << rnti
             << "의 데이터를 받았음. 이 데이터의 SR 시점은 " << ueInfo.lastPacketCreationTime
-            << ",  이 데이터의 AoI는 : " << realAoi << " ms\n";
-  Worst_Age_Map[rnti].push_back (realAoi);
-  m_scheduledAgeValues.push_back (realAoi);
+            << ",  이 데이터의 AoI는 : " << realAoi << " µs\n";
+  Worst_Age_Map[rnti].push_back (realAoi/1000);
+  m_scheduledAgeValues.push_back (realAoi/1000);
   ueInfo.lastTransmissionSuccessful = true;
   ueInfo.WMA += 1;
+  std::cout<<"[gnb-mac] ue"<<rnti<<"의 wma 수치 : "<<ueInfo.WMA<<std::endl;
   wma_map[rnti] = ueInfo.WMA;
-  
+
   // 처리량 계산
   uint64_t bytes = p->GetSize (); // 패킷 바이트 크기
   rntiToTotalBytes[rnti] += bytes;
@@ -1191,16 +1192,16 @@ NrGnbMac::DoReceiveControlMessage (Ptr<NrControlMessage> msg)
 
         auto &ueInfo = m_ueAoiMap[rnti];
         ueInfo.lastPacketCreationTime = lastPacketCreationTime;
-
+        
         ueInfo.beforeSchedulingTime =
-            Simulator::Now ().GetMilliSeconds (); // 현재 시간을 스케줄링전 시간 변수에 저장
+            Simulator::Now ().GetMicroSeconds (); // 현재 시간을 스케줄링전 시간 변수에 저장
         ueInfo.currentAoI =
             ueInfo.beforeSchedulingTime -
             ueInfo.lastPacketCreationTime; // ueinfo에 스케줄링에 사용할 현재 aoi 저장
         // On/Off [4]
-        // std::cout << "[gnb-mac] SR로부터 받은 데이터 UE " << rnti
-        //           << "의 데이터 패킷 생성 시간은 : " << lastPacketCreationTime << "ns\n"
-        //           << " + 이후 스케줄러에 보낼 aoi : " << ueInfo.currentAoI << " ns\n";
+        std::cout << "[gnb-mac] SR로부터 받은 데이터 UE " << rnti
+                  << "의 데이터 패킷 생성 시간은 : " << lastPacketCreationTime << "µs\n"
+                  << " + 이후 스케줄러에 보낼 aoi : " << ueInfo.currentAoI << " μs\n";
         m_ccmMacSapUser->UlReceiveSr (sr->GetRNTI (), GetBwpId ());
         break;
       }
