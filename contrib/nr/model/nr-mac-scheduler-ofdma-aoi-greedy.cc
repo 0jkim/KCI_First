@@ -185,6 +185,8 @@ NrMacSchedulerOfdmaAoiGreedy::BeforeUlSched (const UePtrAndBufferReq &ue,
   uint16_t ue_rnti = ue.first->GetRnti ();
   uint32_t ue_aoi = this->GetAge (ue_rnti);
   uint32_t ue_WMA = this->GetWMA(ue_rnti);
+  std::cout<<"[ofdma-aoi] : this로 가져온 "<<ue_rnti<< "의 aoi "<<ue_aoi<<std::endl;
+  std::cout<<"[ofdma-aoi] : this로 가져온 "<<ue_rnti<< "의 wma "<<ue_WMA<<std::endl;
   uePtr->UpdateAoi (ue_aoi);
   uePtr->IncrementNiceCount(ue_WMA);
 

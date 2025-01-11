@@ -3,6 +3,11 @@
 
 namespace ns3 {
 
+uint32_t NrMacSchedulerUeInfoAoiGreedy::global_min_aoi = 100000;
+uint32_t NrMacSchedulerUeInfoAoiGreedy::global_max_aoi = 0;
+uint32_t NrMacSchedulerUeInfoAoiGreedy::global_min_wma = 100000;
+uint32_t NrMacSchedulerUeInfoAoiGreedy::global_max_wma = 0;
+
 NS_LOG_COMPONENT_DEFINE ("NrMacSchedulerUeInfoAoiGreedy");
 
 void
@@ -18,26 +23,35 @@ NrMacSchedulerUeInfoAoiGreedy::IncrementNiceCount (uint32_t WMA)
   NS_LOG_FUNCTION (this);
   m_niceCount = WMA;
 }
+/**
+ * 정규화 정상화 해야함
+ */
 void
-NrMacSchedulerUeInfoAoiGreedy::Update_Normalization(uint32_t currentAoi, uint32_t currentWma)
+NrMacSchedulerUeInfoAoiGreedy::Update_Normalization (uint32_t currentAoi, uint32_t currentWma)
 {
   NS_LOG_FUNCTION (this);
-  if(max_aoi == 0 || currentAoi >= max_aoi)
-  {
-    max_aoi = currentAoi;
-  }
-  if(min_aoi == 100000||currentAoi <= min_aoi)
-  {
-    min_aoi = currentAoi;
-  }
-  if(max_wma == 0 || currentWma>= max_wma)
-  {
-    max_wma = currentWma;
-  }
-  if(min_wma == 100000||currentWma<=min_wma)
-  {
-    min_wma = currentWma;
-  }
+  std::cout<<"현재 최대 최소 aoi 및 wma\n"<<"Max AoI : "<<global_max_aoi<<", Min AoI : "<<global_min_aoi;
+  std::cout<<"\nMax WMA : "<<global_max_wma<<", Min WMA : "<<global_min_wma<<"\n";
+  if (global_max_aoi == 0 || currentAoi > global_max_aoi)
+    { 
+      std::cout<<"정규화 업데이트 max aoi를 현재 aoi "<<currentAoi<<"\n";
+      global_max_aoi = currentAoi;
+    }
+  if (global_min_aoi == 100000 || currentAoi < global_min_aoi)
+    {
+      std::cout<<"정규화 업데이트 min aoi를 현재 aoi "<<currentAoi<<"\n";
+      global_min_aoi = currentAoi;
+    }
+  if (global_max_wma == 0 || currentWma > global_max_wma)
+    {
+      std::cout<<"정규화 업데이트 max wma를 현재 wma "<<currentWma<<"\n";
+      global_max_wma = currentWma;
+    }
+  if (global_min_wma == 100000 || currentWma < global_min_wma)
+    {
+      std::cout<<"정규화 업데이트 min wma를 현재 wma "<<currentWma<<"\n";
+      global_min_wma = currentWma;
+    }
 }
 uint32_t
 NrMacSchedulerUeInfoAoiGreedy::GetAoi () const
@@ -94,20 +108,34 @@ NrMacSchedulerUeInfoAoiGreedy::CompareUeWeightsUl (const NrMacSchedulerNs3::UePt
   auto luePtr = dynamic_cast<NrMacSchedulerUeInfoAoiGreedy *> (lue.first.get ());
   auto ruePtr = dynamic_cast<NrMacSchedulerUeInfoAoiGreedy *> (rue.first.get ());
 
+  float x = 0.1;
+  std::cout << "가중치 값 " << x << std::endl;
   // Aoi + WMA (Normalization)
-  double lMetric = 0.5 * ((luePtr->GetAoi() - luePtr->min_aoi) / 
-                        (luePtr->max_aoi - luePtr->min_aoi == 0 ? 1 : luePtr->max_aoi - luePtr->min_aoi)) +
-                 0.5 * ((luePtr->GetNiceCount() - luePtr->min_wma) / 
-                        (luePtr->max_wma - luePtr->min_wma == 0 ? 1 : luePtr->max_wma - luePtr->min_wma));
+  double lMetric = x * ((luePtr->GetAoi() - NrMacSchedulerUeInfoAoiGreedy::global_min_aoi) /
+                        (NrMacSchedulerUeInfoAoiGreedy::global_max_aoi - NrMacSchedulerUeInfoAoiGreedy::global_min_aoi == 0 ? 1 : 
+                         NrMacSchedulerUeInfoAoiGreedy::global_max_aoi - NrMacSchedulerUeInfoAoiGreedy::global_min_aoi)) +
+                 (1-x) * ((luePtr->GetNiceCount() - NrMacSchedulerUeInfoAoiGreedy::global_min_wma) /
+                        (NrMacSchedulerUeInfoAoiGreedy::global_max_wma - NrMacSchedulerUeInfoAoiGreedy::global_min_wma == 0 ? 1 : 
+                         NrMacSchedulerUeInfoAoiGreedy::global_max_wma - NrMacSchedulerUeInfoAoiGreedy::global_min_wma));
 
-  double rMetric = 0.5 * ((ruePtr->GetAoi() - ruePtr->min_aoi) / 
-                        (ruePtr->max_aoi - ruePtr->min_aoi == 0 ? 1 : ruePtr->max_aoi - ruePtr->min_aoi)) +
-                 0.5 * ((ruePtr->GetNiceCount() - ruePtr->min_wma) / 
-                        (ruePtr->max_wma - ruePtr->min_wma == 0 ? 1 : ruePtr->max_wma - ruePtr->min_wma));
-  
+  double rMetric = x * ((ruePtr->GetAoi() - NrMacSchedulerUeInfoAoiGreedy::global_min_aoi) /
+                        (NrMacSchedulerUeInfoAoiGreedy::global_max_aoi - NrMacSchedulerUeInfoAoiGreedy::global_min_aoi == 0 ? 1 : 
+                         NrMacSchedulerUeInfoAoiGreedy::global_max_aoi - NrMacSchedulerUeInfoAoiGreedy::global_min_aoi)) +
+                 (1-x) * ((ruePtr->GetNiceCount() - NrMacSchedulerUeInfoAoiGreedy::global_min_wma) /
+                        (NrMacSchedulerUeInfoAoiGreedy::global_max_wma - NrMacSchedulerUeInfoAoiGreedy::global_min_wma == 0 ? 1 : 
+                         NrMacSchedulerUeInfoAoiGreedy::global_max_wma - NrMacSchedulerUeInfoAoiGreedy::global_min_wma));
+
   // Aoi + WMA (no Normalization)
-  // double lMetric = 0.5 * luePtr->GetAoi() + luePtr->GetNiceCount();
-  // double rMetric = 0.5 * ruePtr->GetAoi() + ruePtr->GetNiceCount();
+  // double lMetric = x * luePtr->GetAoi () + (1 - x) * luePtr->GetNiceCount ();
+  // double rMetric = x * ruePtr->GetAoi () + (1 - x) * ruePtr->GetNiceCount ();
+
+  std::cout << luePtr->GetRnti () << "의 aoi " << luePtr->GetAoi () << " + wma "
+            << luePtr->GetNiceCount () << std::endl;
+  std::cout << ruePtr->GetRnti () << "의 aoi " << ruePtr->GetAoi () << " + wma "
+            << ruePtr->GetNiceCount () << std::endl;
+
+  std::cout << "lmetric 값 " << lMetric << std::endl;
+  std::cout << "rmetric 값 " << rMetric << std::endl;
 
   // 단일 Aoi용 스케줄러
   // double lMetric = luePtr->GetAoi();

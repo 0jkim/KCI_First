@@ -135,13 +135,7 @@ protected:
                               const FTResources &assignableInIteration) const override;
 
 private:
-  /**
-   * 정규화를 위한 min, max 변수 추가
-   */
-  uint32_t max_aoi=0;
-  uint32_t min_aoi=100000;
-  uint32_t max_wma=0;
-  uint32_t min_wma=100000;
+  
   /**
    * \brief Helper function to prioritize UEs based on AoI
    * \param ueList List of UEs to prioritize

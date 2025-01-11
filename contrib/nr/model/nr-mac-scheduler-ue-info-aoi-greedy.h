@@ -29,10 +29,6 @@ namespace ns3 {
 class NrMacSchedulerUeInfoAoiGreedy : public NrMacSchedulerUeInfo
 {
 public:
-  uint32_t min_aoi;
-  uint32_t max_aoi;
-  uint32_t min_wma;
-  uint32_t max_wma;
   /**
    * \brief NrMacSchedulerUeInfoAoiGreedy constructor
    * \param rnti RNTI of the UE
@@ -47,14 +43,14 @@ public:
         m_niceCount (1),
         m_aoiWeight (0.5),
         m_niceWeight (0.5),
-        m_metric (0.0),
-        min_aoi(100000),
-        max_aoi(0),
-        min_wma(100000),
-        max_wma(0)
+        m_metric (0.0)
   {
   }
 
+  static uint32_t global_min_aoi;
+  static uint32_t global_max_aoi;
+  static uint32_t global_min_wma;
+  static uint32_t global_max_wma;
   /**
    * \brief Update the AoI value for the UE
    * \param currentAoi The current AoI value
