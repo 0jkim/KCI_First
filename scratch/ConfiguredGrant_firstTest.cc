@@ -50,6 +50,7 @@
 #include <random>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 
 using namespace ns3;
 
@@ -130,7 +131,8 @@ MyModel::~MyModel () // 0jkim : 소멸자
 
 void
 MyModel::Setup (Ptr<NetDevice> device, Address address, uint32_t packetSize, uint32_t nPackets,
-                DataRate dataRate, uint8_t period, uint32_t deadline, bool isOn) // 0jkim : 설정 메서드
+                DataRate dataRate, uint8_t period, uint32_t deadline,
+                bool isOn) // 0jkim : 설정 메서드
 {
   m_device = device;
   m_packetSize = packetSize;
@@ -255,19 +257,21 @@ MyModel::ScheduleTxUl (uint8_t period)
   if (m_running)
     {
       Time tNext;
-      if(m_isOn)
-      {
-      Time tNext = MilliSeconds (period);
-      }
+      if (m_isOn)
+        {
+          Time tNext = MilliSeconds (period);
+        }
       else
-      {
-      Ptr<UniformRandomVariable> uniVar = CreateObject<UniformRandomVariable>();
-      uniVar->SetStream(521+m_device->GetNode()->GetId()); // 시드 설정
-      uniVar->SetAttribute ("Min", DoubleValue(10.0));  // 주기 범위
-      uniVar->SetAttribute("Max",DoubleValue(5000.0)); // 주기 범위
-      tNext = MilliSeconds(uniVar->GetValue());  
-      }
-      
+        {
+          Ptr<UniformRandomVariable> uniVar = CreateObject<UniformRandomVariable> ();
+
+          uniVar->SetAttribute ("Min", DoubleValue (10.0)); // 주기 범위
+          uniVar->SetAttribute ("Max", DoubleValue (5000.0)); // 주기 범위
+
+          tNext = MilliSeconds (uniVar->GetValue ());
+        }
+      std::cout << m_device->GetNode ()->GetId () << "의 데이터 전송 주기 "
+                << tNext.GetMilliSeconds () << std::endl;
       m_sendEvent = Simulator::Schedule (
           tNext, &MyModel::SendPacketUl,
           this); // 현재 sendpacketul메서드와 함께 상향링크 스케줄링 이벤트 시작
@@ -343,7 +347,7 @@ main (int argc, char *argv[])
   uint8_t period = uint8_t (1); // 0jkim : 주기 설정 1 ms
 
   uint16_t gNbNum = 1; // 0jkim : gNB 개수 설정
-  uint16_t ueNumPergNb = 30; // 0jkim : UE 개수 설정
+  uint16_t ueNumPergNb = 100; // 0jkim : UE 개수 설정
 
   bool enableUl = true; // 0jkim : UL 트래픽 활성화 여부 설정(true)
   uint32_t nPackets = 250; // 0jkim : 패킷 개수 설정
@@ -352,7 +356,10 @@ main (int argc, char *argv[])
 
   delay = MicroSeconds (10); // 0jkim : 전송 시간 설정
 
-  uint32_t seed = 521; // 기본값으로 1 설정
+  uint32_t seed = 5555; // 시드 값 설정
+  RngSeedManager::SetSeed (12345);
+  RngSeedManager::SetRun (5555);
+
   std::random_device rd;
 
   CommandLine cmd;
@@ -386,28 +393,25 @@ main (int argc, char *argv[])
     {
       // 각 UE마다 다른 시드 사용
       std::mt19937 gen (seed + i); // i를 더해 각 UE마다 다른 시드 생성
-      
+
       // std::uniform_int_distribution<> distr_packet (10, 500); // 50 bytes to 200 bytes
-      
+
       //std::uniform_int_distribution<> distr_period (10, 10); // 주기 On
       std::uniform_int_distribution<> distr_period (10, 500); // 주기 Off(Default)
       //std::uniform_int_distribution<> distr_packet (100,100); // 50 bytes to 200 bytes
       std::uniform_int_distribution<> distr_packet (10, 500); // 50 bytes to 200 bytes
       std::uniform_int_distribution<> distr_init (50000, 200000); // 0ms to 1000ms
       std::uniform_int_distribution<> distr_deadline (60000000, 60000000); // 50ms to 150ms
-      
+
       v_period[i] = distr_period (gen);
       v_packet[i] = distr_packet (gen);
       v_init[i] = distr_init (gen);
       v_deadline[i] = distr_deadline (gen);
       //std::uniform_int_distribution<> distr_init (0, 0); // infinite
-      
 
-      
       //std::uniform_int_distribution<> distr_deadline (20000000, 20000000); // infinite
-      
     }
-  bool isOn=false;   // 주기 on, off
+  bool isOn = false; // 주기 on, off
   int scheduler_type_number = 3; // 스케줄러 타입 1:rr 2:pf 3:greedy
   double simTime = 60.0; // 시뮬레이션 시간 설정x
   std::cout << "\n Init values: " << '\n';
@@ -424,8 +428,9 @@ main (int argc, char *argv[])
 
   std::cout << "Period values: " << '\n';
   for (int val : v_period)
-    std::cout << val <<std::endl;;
-  std::cout<<"Period On/Off ? : "<<isOn;
+    std::cout << val << std::endl;
+  ;
+  std::cout << "Period On/Off ? : " << isOn;
   std::cout << std::endl;
   /*--------------------------------------------------------------------------------------------------------------------------------------------------------*/
   /*----------------------------------------------------------------------UE 환경 설정 끝----------------------------------------------------------------------*/
@@ -462,7 +467,7 @@ main (int argc, char *argv[])
   gridScenario.SetSectorization (GridScenarioHelper::SINGLE);
   gridScenario.SetBsNumber (gNbNum);
   gridScenario.SetUtNumber (ueNumPergNb * gNbNum);
-  
+
   gridScenario.SetScenarioHeight (6);
   gridScenario.SetScenarioLength (6);
   randomStream += gridScenario.AssignStreams (randomStream); // 0jkim : 랜덤 스트림 할당
@@ -509,8 +514,8 @@ main (int argc, char *argv[])
 
   // enable or disable HARQ retransmissions
   // 0jkim : HARQ 재전송 활성화 여부 설정 (현재 False)
-  nrHelper->SetSchedulerAttribute ("EnableHarqReTx", BooleanValue (false));
-  Config::SetDefault ("ns3::NrHelper::HarqEnabled", BooleanValue (false));
+  nrHelper->SetSchedulerAttribute ("EnableHarqReTx", BooleanValue (true));
+  Config::SetDefault ("ns3::NrHelper::HarqEnabled", BooleanValue (true));
 
   // Ptr<NrMacSchedulerOfdmaAoiGreedy> scheduler = CreateObject<NrMacSchedulerOfdmaAoiGreedy> ();
   // nrHelper->SetSchedulerTypeId (scheduler->GetInstanceTypeId ());
@@ -573,7 +578,7 @@ main (int argc, char *argv[])
   nrHelper->SetSchedulerAttribute ("StartingMcsUl", UintegerValue (12)); // 초기 MCS 값 설정
 
   // 0jkim : 채널 상태 모델의 업데이트 주기를 설정함(0으로 설정하면 채널 상태 모델이 업데이트되지 않음)
-  nrHelper->SetChannelConditionModelAttribute ("UpdatePeriod", TimeValue (MilliSeconds (0))); //
+  nrHelper->SetChannelConditionModelAttribute ("UpdatePeriod", TimeValue (MilliSeconds (100))); //
   nrHelper->SetPathlossAttribute ("ShadowingEnabled", BooleanValue (true)); //false
 
   // Error Model: UE and GNB with same spectrum error model.
@@ -675,8 +680,8 @@ main (int argc, char *argv[])
     {
       Ptr<MyModel> modelUl = CreateObject<MyModel> (); // 0jkim : 각 UE에 대한 MyModel 객체 생성
       modelUl->Setup (ueNetDev.Get (ii), enbNetDev.Get (0)->GetAddress (), v_packet[ii], nPackets,
-                      DataRate ("1Mbps"), v_period[ii],
-                      v_deadline[ii],isOn); // 0jkim : 각 UE에 대한 setup 함수 호출
+                      DataRate ("1Mbps"), v_period[ii], v_deadline[ii],
+                      isOn); // 0jkim : 각 UE에 대한 setup 함수 호출
       v_modelUl[ii] = modelUl; // 0jkim : 설정한 모델을 벡터에 추가
       Simulator::Schedule (
           MicroSeconds (v_init[ii]), &StartApplicationUl,
