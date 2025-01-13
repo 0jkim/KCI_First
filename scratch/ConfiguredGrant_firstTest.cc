@@ -54,6 +54,8 @@
 
 using namespace ns3;
 
+// 우선 kci는 여기서 마무리
+
 /*
  * Enable the logs of the file by enabling the component "ConfiguredGrant",
  * in this way:
@@ -356,9 +358,9 @@ main (int argc, char *argv[])
 
   delay = MicroSeconds (10); // 0jkim : 전송 시간 설정
 
-  uint32_t seed = 5555; // 시드 값 설정
-  RngSeedManager::SetSeed (12345);
-  RngSeedManager::SetRun (5555);
+  uint32_t seed = 555; // 시드 값 설정
+  RngSeedManager::SetSeed (13055);
+  RngSeedManager::SetRun (555);
 
   std::random_device rd;
 
@@ -578,7 +580,7 @@ main (int argc, char *argv[])
   nrHelper->SetSchedulerAttribute ("StartingMcsUl", UintegerValue (12)); // 초기 MCS 값 설정
 
   // 0jkim : 채널 상태 모델의 업데이트 주기를 설정함(0으로 설정하면 채널 상태 모델이 업데이트되지 않음)
-  nrHelper->SetChannelConditionModelAttribute ("UpdatePeriod", TimeValue (MilliSeconds (100))); //
+  nrHelper->SetChannelConditionModelAttribute ("UpdatePeriod", TimeValue (MilliSeconds (0))); //
   nrHelper->SetPathlossAttribute ("ShadowingEnabled", BooleanValue (true)); //false
 
   // Error Model: UE and GNB with same spectrum error model.
