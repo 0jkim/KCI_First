@@ -339,6 +339,13 @@ PrintAverageThroughput (double simulationTime)
 int
 main (int argc, char *argv[])
 {
+  /**
+   * To SCI
+   * TODO : 동적 채널 환경 구성하고 단일 AoI 스케줄러로 AoI 상승 시각화하기
+   * 관련 환경 변수
+   * Shadowing : on (무조건 켜야함)
+   * ChannelUpdatePeriod : 조정
+   */
   // LogComponentEnable ("NrGnbMac", LOG_LEVEL_INFO);
   // LogComponentEnable ("NrUeMac", LOG_LEVEL_INFO);
   // LogComponentEnable ("NrMacSchedulerOfdmaAoiGreedy", LOG_LEVEL_INFO);
